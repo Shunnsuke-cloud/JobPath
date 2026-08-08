@@ -1,0 +1,2 @@
+import type { LucideIcon } from "lucide-react";
+export function SummaryCard({ label, value, description, icon: Icon }: { label: string; value: string; description: string; icon: LucideIcon }) { return <div className="border bg-white p-5"><div className="flex items-center justify-between"><p className="text-sm text-slate-500">{label}</p><Icon className="size-4 text-blue-600" /></div><p className="mt-4 text-2xl font-semibold tracking-tight">{value}</p><p className="mt-1 text-xs text-slate-500">{description}</p></div>; }

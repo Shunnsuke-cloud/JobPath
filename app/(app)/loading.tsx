@@ -1,0 +1,1 @@
+export default function AppLoading() { return <main className="p-8"><div className="h-7 w-40 animate-pulse bg-slate-200" /><div className="mt-8 grid grid-cols-4 gap-4">{Array.from({ length: 4 }, (_, index) => <div key={index} className="h-32 animate-pulse border bg-white" />)}</div><div className="mt-6 h-72 animate-pulse border bg-white" /></main>; }

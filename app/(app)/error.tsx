@@ -1,0 +1,3 @@
+"use client";
+import { useEffect } from "react"; import { Button } from "@/components/ui/button";
+export default function AppError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) { useEffect(() => { console.error("Application error", error); }, [error]); return <main className="flex min-h-[60vh] items-center justify-center p-8"><div className="max-w-md border bg-white p-8 text-center"><h1 className="text-xl font-semibold">データを表示できませんでした</h1><p className="mt-3 text-sm leading-6 text-slate-500">通信状況を確認してから、もう一度お試しください。</p><Button className="mt-6" onClick={reset}>再読み込み</Button></div></main>; }

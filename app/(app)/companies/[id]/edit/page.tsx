@@ -1,0 +1,6 @@
+import { notFound } from "next/navigation";
+import { PageHeader } from "@/components/layout/page-header";
+import { CompanyForm } from "@/components/companies/company-form";
+import { createClient } from "@/lib/supabase/server";
+import type { CompanyInput } from "@/lib/validations/company";
+export default async function EditCompanyPage({ params }: { params: Promise<{ id: string }> }) { const { id } = await params; const supabase = await createClient(); const [{ data: company }, { count }] = await Promise.all([supabase.from("companies").select("*").eq("id", id).maybeSingle(), supabase.from("companies").select("id", { count: "exact", head: true })]); if (!company) notFound(); const values: CompanyInput = { name: company.name, industry: company.industry ?? "", companyType: (company.company_type ?? "") as CompanyInput["companyType"], jobPosition: company.job_position ?? "", location: company.location ?? "", currentStatus: company.current_status, interestLevel: company.interest_level ?? 3, applicationSource: company.application_source ?? "", jobUrl: company.job_url ?? "", corporateUrl: company.corporate_url ?? "", memo: company.memo ?? "" }; return <><PageHeader title="企業情報を編集" description={company.name} /><main className="p-8"><CompanyForm company={values} companyId={company.id} companyCount={count ?? 0} /></main></>; }
