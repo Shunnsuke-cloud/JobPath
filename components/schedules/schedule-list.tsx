@@ -12,7 +12,7 @@ type Schedule = Database["public"]["Tables"]["schedules"]["Row"] & { company?: {
 
 function urgency(schedule: Schedule) {
   const difference = new Date(schedule.start_at).getTime() - Date.now();
-  if (!schedule.is_completed && difference < 0) return "期限超過";
+  if (!schedule.is_completed && difference < 0) return schedule.is_deadline ? "期限超過" : "終了";
   if (!schedule.is_completed && difference <= 3 * 86400000) return "3日以内";
   return null;
 }
