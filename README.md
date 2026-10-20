@@ -6,7 +6,21 @@ JobPathは、就職活動中の学生が応募企業、選考状況、面接予�
 
 ## 公開URL
 
-[https://jobpath-4g10.onrender.com/login](https://jobpath-4g10.onrender.com/login)
+[https://jobpath-4g10.onrender.com/](https://jobpath-4g10.onrender.com/)
+
+`/` はログイン前・ログイン後ともに閲覧できるランディングページです。`/login`・`/signup` から既存の認証フローへ進めます。
+
+## ランディングページ
+
+`components/landing/` にLP本体、ナビゲーション、装飾UI、Magnetic Button、アニメーションフック、LP専用CSSを配置しています。既存の認証・Supabase・RLS・業務画面は変更していません。装飾UIは静的な紹介用データで、操作可能なデモやDBアクセスはありません。
+
+GSAP 3.15（[Standard no-charge license](https://gsap.com/standard-license/)）とScrollTriggerで、カードの集合、Stickyの4ステップ、スクロール連動の3D変形を実装しています。有料プラン・外部API・画像素材は不要です。ロゴとUIはHTML/CSS、アイコンは既存のLucideを利用し、外部フォントを取得しません。
+
+モバイル・高さ700px未満の画面・`prefers-reduced-motion` ではSticky演出を解除し、内容を通常の縦レイアウトで表示します。GSAPは動的import、マウス処理はrequestAnimationFrame、画面外の継続演出はIntersection Observerで制御します。離脱時や表示条件変更時にScrollTriggerとイベントを解除します。
+
+LP専用のtitle・description・OG情報と `app/opengraph-image.tsx` による共有画像を設定しています。OG画像の絶対URLにはRenderの `RENDER_EXTERNAL_URL`、次に既存の `NEXT_PUBLIC_APP_URL` を使用します。カスタムドメインを使う場合は両者の値を公開URLに合わせてください。
+
+`tests/e2e/landing.spec.ts` はアカウント不要で、公開LP、スクロール集合演出、4ステップ、マウス反応、認証ページへの遷移、未認証の保護、モバイルメニュー、縮小モーション、画面サイズ変更時の解除を確認します。キャプチャは `test-results/landing-*.png` に保存します。
 
 ## 想定ユーザーと主な機能
 
