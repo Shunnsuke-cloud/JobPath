@@ -1,0 +1,87 @@
+import { test, expect } from "@playwright/test";
+
+test("public landing, scroll transformation and existing auth destinations", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  const response = await page.goto("/");
+  expect(response?.status()).toBe(200);
+  await expect(page).toHaveTitle("JobPath | 就活のすべてを、ひとつの場所に。");
+  await expect(page.locator("h1")).toHaveText("就活のすべてを、ひとつの場所に。");
+  await expect(page.locator(".jp-landing")).toHaveClass(/jp-motion-desktop/);
+  await expect.poll(() => page.locator(".jp-hero-dashboard").evaluate((element) => Number(getComputedStyle(element).opacity))).toBe(1);
+  await page.screenshot({ path: "test-results/landing-desktop.png" });
+  const cta = page.locator(".jp-hero-buttons .jp-button").first();
+  const ctaBox = await cta.boundingBox();
+  await page.mouse.move(ctaBox!.x + ctaBox!.width - 10, ctaBox!.y + 10);
+  await expect.poll(() => cta.evaluate((element) => parseFloat((element as HTMLElement).style.getPropertyValue("--mx")))).toBeGreaterThan(0);
+  await expect.poll(() => page.locator(".jp-landing").evaluate((element) => (element as HTMLElement).style.getPropertyValue("--pointer-x"))).not.toBe("");
+  await page.getByRole("navigation", { name: "メインナビゲーション", exact: true }).getByRole("link", { name: "特徴" }).click();
+  await expect(page).toHaveURL(/#story$/);
+  await page.locator(".jp-problem").evaluate((element) => window.scrollTo({ top: (element as HTMLElement).offsetTop + element.getBoundingClientRect().height - window.innerHeight, behavior: "instant" }));
+  await expect(page.locator(".jp-clarity-dashboard")).toBeVisible();
+  await expect.poll(() => page.locator(".jp-clarity-dashboard").evaluate((element) => Number(getComputedStyle(element).opacity))).toBeGreaterThan(0.95);
+  await expect.poll(() => page.locator(".jp-chaos-card").first().evaluate((element) => Number(getComputedStyle(element).opacity))).toBeLessThan(0.05);
+  await page.screenshot({ path: "test-results/landing-clarity.png" });
+  const feature = page.locator(".jp-feature-0");
+  await feature.scrollIntoViewIfNeeded();
+  const featureBox = await feature.boundingBox();
+  await page.mouse.move(featureBox!.x + featureBox!.width * 0.8, featureBox!.y + 50);
+  await expect.poll(() => feature.evaluate((element) => parseFloat((element as HTMLElement).style.getPropertyValue("--ry")))).toBeGreaterThan(0);
+  const flow = page.locator(".jp-workflow");
+  for (let i = 0; i < 4; i++) {
+    await flow.evaluate((element, step) => window.scrollTo({ top: (element as HTMLElement).offsetTop + (element.getBoundingClientRect().height - window.innerHeight) * (step / 3), behavior: "instant" }), i);
+    await expect.poll(() => page.locator(`.jp-workflow-panel-${i}`).evaluate((element) => Number(getComputedStyle(element).opacity))).toBeGreaterThan(0.9);
+  }
+  await page.screenshot({ path: "test-results/landing-workflow.png" });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.locator(".jp-problem").evaluate((element) => window.scrollTo({ top: (element as HTMLElement).offsetTop + element.getBoundingClientRect().height - window.innerHeight, behavior: "instant" }));
+  await expect.poll(async () => {
+    const dashboard = await page.locator(".jp-clarity-dashboard").boundingBox();
+    const copy = await page.locator(".jp-clarity-copy").boundingBox();
+    return dashboard!.y + dashboard!.height < copy!.y;
+  }).toBe(true);
+  await page.screenshot({ path: "test-results/landing-short-desktop.png" });
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /opengraph-image/);
+  await page.locator(".jp-nav-actions").getByRole("link", { name: "無料で始める" }).click();
+  await expect(page).toHaveURL(/\/signup$/);
+  await expect(page.locator('input[type="email"]')).toBeVisible();
+  await page.goto("/");
+  await page.locator(".jp-nav-actions").getByRole("link", { name: "ログイン", exact: true }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.locator('input[type="password"]')).toBeVisible();
+  await page.goto("/dashboard");
+  await expect(page).toHaveURL(/\/login$/);
+  expect(errors).toEqual([]);
+});
+
+test("mobile navigation, readable content and reduced motion fallback", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await expect(page.locator("h1")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: "test-results/landing-mobile.png" });
+  const menu = page.getByRole("button", { name: /メニューを(開く|閉じる)/ });
+  await menu.click();
+  await expect(menu).toHaveAttribute("aria-expanded", "true");
+  await page.keyboard.press("Escape");
+  await expect(menu).toHaveAttribute("aria-expanded", "false");
+  await expect(menu).toBeFocused();
+  await menu.click();
+  await page.getByRole("navigation", { name: "モバイルナビゲーション" }).getByRole("link", { name: "機能" }).click();
+  await expect(page).toHaveURL(/#features$/);
+  await expect(menu).toHaveAttribute("aria-expanded", "false");
+  for (const title of ["ダッシュボード", "企業管理", "選考管理", "スケジュール管理", "面接記録", "企業研究"]) await expect(page.locator(".jp-feature-copy").getByRole("heading", { name: title, exact: true })).toBeVisible();
+  for (let i = 0; i < 4; i++) await expect(page.locator(`.jp-workflow-panel-${i}`)).toBeVisible();
+  await page.screenshot({ path: "test-results/landing-mobile-full.png", fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await expect(page.locator(".jp-landing")).not.toHaveClass(/jp-motion-desktop/);
+  for (let i = 0; i < 4; i++) await expect(page.locator(`.jp-workflow-panel-${i}`)).toBeVisible();
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await expect(page.locator(".jp-landing")).toHaveClass(/jp-motion-desktop/);
+  await page.setViewportSize({ width: 320, height: 740 });
+  await expect(page.locator(".jp-landing")).not.toHaveClass(/jp-motion-desktop/);
+  for (let i = 0; i < 4; i++) await expect(page.locator(`.jp-workflow-panel-${i}`)).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
